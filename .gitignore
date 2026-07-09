@@ -1,0 +1,29 @@
+# Node.js and dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build and deployment files
+[Dd]ebug/
+[Rr]elease/
+x64/
+build/
+[Bb]in/
+[Oo]bj/
+dist/
+publish/
+
+# VS Code / Visual Studio temporary files
+.vscode/
+*.suo
+*.user
+*.sln.docstates
+*.vssscc
+*.vspscc
+
+# Other files to ignore
+*.lock
+package-lock.json
+*.log
+~$*
