@@ -1,47 +1,92 @@
-import * as React from "react";
-import Header from "./Header";
-import HeroList, { HeroListItem } from "./HeroList";
-import TextInsertion from "./TextInsertion";
-import { makeStyles } from "@fluentui/react-components";
-import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
-import { insertText } from "../taskpane";
+import React, { useState, useEffect } from "react";
+import { Box, Tabs, Tab, IconButton, Typography } from "@mui/material";
+import { Close as CloseIcon, MoreHoriz as MoreIcon, Add as AddIcon, Edit as EditIcon, Settings as SettingsIcon } from "@mui/icons-material";
+import { NewTask } from "./NewTask";
+import { EditTask } from "./EditTask";
+import { Setup } from "./Setup";
+import { getStoredConfig, clearConfig } from "../services/proworkflow";
 
-interface AppProps {
-  title: string;
-}
+export default function App() {
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
-const useStyles = makeStyles({
-  root: {
-    minHeight: "100vh",
-  },
-});
+  useEffect(() => {
+    const config = getStoredConfig();
+    setIsConfigured(!!config);
+  }, []);
 
-const App: React.FC<AppProps> = (props: AppProps) => {
-  const styles = useStyles();
-  // The list items are static and won't change at runtime,
-  // so this should be an ordinary const, not a part of state.
-  const listItems: HeroListItem[] = [
-    {
-      icon: <Ribbon24Regular />,
-      primaryText: "Achieve more with Office integration",
-    },
-    {
-      icon: <LockOpen24Regular />,
-      primaryText: "Unlock features and functionality",
-    },
-    {
-      icon: <DesignIdeas24Regular />,
-      primaryText: "Create and visualize like a pro",
-    },
-  ];
+  const handleLogoutSettings = () => {
+    clearConfig();
+    setIsConfigured(false);
+  };
 
   return (
-    <div className={styles.root}>
-      <Header logo="assets/logo-filled.png" title={props.title} message="Welcome" />
-      <HeroList message="Discover what this add-in can do for you today!" items={listItems} />
-      <TextInsertion insertText={insertText} />
-    </div>
-  );
-};
+    <Box sx={{ minHeight: "100vh", bgcolor: "#ffffff", fontFamily: '"Arial", sans-serif' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "16px 20px",
+          borderBottom: "1px solid #E2E8F0",
+        }}
+      >
+        <Typography sx={{ fontSize: "18px", fontWeight: 700, color: "#475569" }}>
+          ProWorkflow
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {isConfigured && (
+            <IconButton size="small" onClick={handleLogoutSettings}>
+              <SettingsIcon sx={{ color: "#64748B", fontSize: "18px" }} />
+            </IconButton>
+          )}
+          <IconButton size="small">
+            <MoreIcon sx={{ color: "#64748B", fontSize: "20px" }} />
+          </IconButton>
+          <IconButton size="small">
+            <CloseIcon sx={{ color: "#64748B", fontSize: "20px" }} />
+          </IconButton>
+        </Box>
+      </Box>
 
-export default App;
+      {!isConfigured ? (
+        <Setup onSetupSuccess={() => setIsConfigured(true)} />
+      ) : (
+        <Box sx={{ padding: "16px 20px" }}>
+          <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_, val) => setActiveTab(val)}
+              textColor="primary"
+              indicatorColor="primary"
+              sx={{
+                minHeight: "40px",
+                "& .MuiTabs-indicator": {
+                  backgroundColor: "#3B82F6",
+                  height: "2.5px",
+                },
+                "& .MuiTab-root": {
+                  minHeight: "40px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  fontFamily: '"Arial", sans-serif',
+                  color: "#64748B",
+                  padding: "6px 16px",
+                  "&.Mui-selected": {
+                    color: "#1E293B",
+                  },
+                },
+              }}
+            >
+              <Tab icon={<AddIcon sx={{ fontSize: "16px", mr: 0.5 }} />} iconPosition="start" label="New task" />
+              <Tab icon={<EditIcon sx={{ fontSize: "16px", mr: 0.5 }} />} iconPosition="start" label="Edit Task" />
+            </Tabs>
+          </Box>
+
+          {activeTab === 0 ? <NewTask /> : <EditTask />}
+        </Box>
+      )}
+    </Box>
+  );
+}
