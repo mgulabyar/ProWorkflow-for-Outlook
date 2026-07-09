@@ -9,7 +9,7 @@ import { getStoredConfig, clearConfig } from "../services/proworkflow";
 export default function App() {
   const [isConfigured, setIsConfigured] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
-
+// useEffect 
   useEffect(() => {
     const config = getStoredConfig();
     setIsConfigured(!!config);
