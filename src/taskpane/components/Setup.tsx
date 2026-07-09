@@ -21,7 +21,7 @@ export const Setup: React.FC<SetupProps> = ({ onSetupSuccess }) => {
       setError("Please fill out all configuration fields!");
       return;
     }
-// setloading 
+// setloa
     setLoading(true);
 
     const isConnected = await testConnection({ apiKey, email, password });
