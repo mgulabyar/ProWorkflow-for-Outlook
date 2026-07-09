@@ -295,9 +295,12 @@
 //   );
 // };
 
+// declare const Office: any;
+
+
 declare const Office: any;
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   TextField,
@@ -310,85 +313,171 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  Tooltip,
 } from "@mui/material";
-import { getProjects, getTaskGroups, getStaff, createTask } from "../services/proworkflow";
+import {
+  getProjects,
+  getTaskGroups,
+  getStaff,
+  createTask,
+  uploadTaskAttachment,
+} from "../services/proworkflow";
 
 /* global Office */
 
+interface Project {
+  id: string;
+  name: string;
+}
+
+interface TaskGroup {
+  id: string;
+  name: string;
+}
+
+interface StaffMember {
+  id: string;
+  firstname: string;
+  lastname: string;
+}
+
+interface EmailAttachment {
+  id: string;
+  name: string;
+}
+
+const PRIORITY_OPTIONS = [
+  { value: 1, label: "Low" },
+  { value: 2, label: "Normal" },
+  { value: 3, label: "High" },
+  { value: 4, label: "Urgent" },
+];
+
+const fieldSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "6px",
+    fontFamily: '"Arial", sans-serif',
+    fontSize: "13px",
+  },
+};
+
+const labelSx = { fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 };
+
+const extractArray = (data: any): any[] => {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    for (const key in data) {
+      if (Array.isArray(data[key])) return data[key];
+    }
+  }
+  return [];
+};
+
+// --- Office.js helpers, promise-wrapped so they can be properly awaited ---
+
+const getSubjectAsync = (item: any): Promise<string> =>
+  new Promise((resolve) => {
+    if (item?.subject && typeof item.subject.getAsync === "function") {
+      item.subject.getAsync((result: any) => {
+        resolve(result.status === Office.AsyncResultStatus.Succeeded ? result.value || "" : "");
+      });
+    } else {
+      resolve(item?.subject || "");
+    }
+  });
+
+const getBodyAsync = (item: any): Promise<string> =>
+  new Promise((resolve) => {
+    if (item?.body && typeof item.body.getAsync === "function") {
+      item.body.getAsync(Office.CoercionType.Text, (result: any) => {
+        resolve(result.status === Office.AsyncResultStatus.Succeeded ? result.value || "" : "");
+      });
+    } else {
+      resolve("");
+    }
+  });
+
+const getEmailAttachments = (item: any): EmailAttachment[] => {
+  if (!item || !Array.isArray(item.attachments)) return [];
+  // Inline attachments (e.g. embedded images) aren't useful as task files
+  return item.attachments.filter((a: any) => !a.isInline);
+};
+
+const getAttachmentContentAsync = (
+  item: any,
+  attachmentId: string
+): Promise<{ contentType: string; content: string } | null> =>
+  new Promise((resolve) => {
+    if (!item || typeof item.getAttachmentContentAsync !== "function") {
+      resolve(null);
+      return;
+    }
+    item.getAttachmentContentAsync(attachmentId, (result: any) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        resolve({ contentType: result.value.format || "application/octet-stream", content: result.value.content });
+      } else {
+        resolve(null);
+      }
+    });
+  });
+
 export const NewTask: React.FC = () => {
+  const [mounted, setMounted] = useState(false);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [projectsList, setProjectsList] = useState<any[]>([]);
-  const [taskGroupsList, setTaskGroupsList] = useState<any[]>([]);
-  const [staffList, setStaffList] = useState<any[]>([]);
-  
+  const [projectsList, setProjectsList] = useState<Project[]>([]);
+  const [taskGroupsList, setTaskGroupsList] = useState<TaskGroup[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedTaskGroup, setSelectedTaskGroup] = useState("");
   const [selectedAssignee, setSelectedAssignee] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [urgent, setUrgent] = useState(false);
-  const [attachments, setAttachments] = useState(false);
+  const [priority, setPriority] = useState<number>(2); // defaults to "Normal"
+  const [includeAttachments, setIncludeAttachments] = useState(false);
 
   const [uiLoading, setUiLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [attachmentsUploading, setAttachmentsUploading] = useState(false);
   const [taskGroupsLoading, setTaskGroupsLoading] = useState(false);
-  
+
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const extractArray = (data: any): any[] => {
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === "object") {
-      for (const key in data) {
-        if (Array.isArray(data[key])) {
-          return data[key];
-        }
-      }
-    }
-    return [];
-  };
+  const officeAvailable = typeof Office !== "undefined" && !!Office.context?.mailbox?.item;
+  const emailAttachments = officeAvailable ? getEmailAttachments(Office.context.mailbox.item) : [];
 
   useEffect(() => {
-    const readEmailAndFetchBaseData = async () => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      setUiLoading(true);
+      setError(null);
       try {
-        setUiLoading(true);
-
-        if (typeof Office !== "undefined" && Office.context?.mailbox?.item) {
+        if (officeAvailable) {
           const item = Office.context.mailbox.item;
-          
-          if (item.subject && typeof item.subject.getAsync === "function") {
-            item.subject.getAsync((result: { status: any; value: any; }) => {
-              if (result.status === Office.AsyncResultStatus.Succeeded) {
-                setTitle(result.value || "");
-              }
-            });
-          } else {
-            setTitle(item.subject || "");
-          }
-
-          if (item.body && typeof item.body.getAsync === "function") {
-            item.body.getAsync(Office.CoercionType.Text, (result: { status: any; value: any; }) => {
-              if (result.status === Office.AsyncResultStatus.Succeeded) {
-                setDescription(result.value || "");
-              }
-            });
-          }
+          const [subject, body] = await Promise.all([getSubjectAsync(item), getBodyAsync(item)]);
+          setTitle(subject);
+          setDescription(body);
         }
 
-        const projectsData = await getProjects();
-        const staffData = await getStaff();
-
+        const [projectsData, staffData] = await Promise.all([getProjects(), getStaff()]);
         setProjectsList(extractArray(projectsData));
         setStaffList(extractArray(staffData));
       } catch (err: any) {
-        setError("Failed to fetch startup data from ProWorkflow.");
+        setError(err?.message || "Failed to fetch startup data from ProWorkflow.");
         console.error(err);
       } finally {
         setUiLoading(false);
       }
     };
 
-    readEmailAndFetchBaseData();
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleProjectChange = async (projectId: string) => {
@@ -402,11 +491,37 @@ export const NewTask: React.FC = () => {
       setTaskGroupsLoading(true);
       const taskGroupsData = await getTaskGroups(projectId);
       setTaskGroupsList(extractArray(taskGroupsData));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load task groups for selected project", err);
+      setError(err?.message || "Failed to load task lists for the selected project.");
     } finally {
       setTaskGroupsLoading(false);
     }
+  };
+
+  const uploadAllAttachments = async (taskId: string) => {
+    const item = Office.context.mailbox.item;
+    let failedCount = 0;
+
+    for (const att of emailAttachments) {
+      const content = await getAttachmentContentAsync(item, att.id);
+      if (!content) {
+        failedCount += 1;
+        continue;
+      }
+      try {
+        await uploadTaskAttachment(taskId, {
+          name: att.name,
+          contentType: content.contentType,
+          contentBytes: content.content,
+        });
+      } catch (err) {
+        console.error(`Failed to upload attachment "${att.name}"`, err);
+        failedCount += 1;
+      }
+    }
+
+    return failedCount;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -423,27 +538,40 @@ export const NewTask: React.FC = () => {
 
     const taskPayload = {
       name: title,
-      description: description,
+      description,
       taskgroupid: selectedTaskGroup || undefined,
-      assigned: selectedAssignee ? [selectedAssignee] : [],
+      contactid: selectedAssignee || undefined,
       duedate: dueDate || undefined,
-      priority: urgent ? "high" : "normal"
+      priorityid: priority,
     };
 
     try {
-      await createTask(selectedProject, taskPayload);
-      setSuccessMessage("Task created in ProWorkflow successfully!");
-      
+      const createdTask = await createTask<{ id: string }>(selectedProject, taskPayload);
+
+      let attachmentWarning = "";
+      if (includeAttachments && emailAttachments.length > 0 && createdTask?.id) {
+        setAttachmentsUploading(true);
+        const failedCount = await uploadAllAttachments(createdTask.id);
+        setAttachmentsUploading(false);
+        if (failedCount > 0) {
+          attachmentWarning = ` (${failedCount} of ${emailAttachments.length} attachment${
+            emailAttachments.length > 1 ? "s" : ""
+          } failed to upload)`;
+        }
+      }
+
+      setSuccessMessage(`Task created in ProWorkflow successfully!${attachmentWarning}`);
+
       setTitle("");
       setDescription("");
       setSelectedProject("");
       setSelectedTaskGroup("");
       setSelectedAssignee("");
       setDueDate("");
-      setUrgent(false);
-      setAttachments(false);
+      setPriority(2);
+      setIncludeAttachments(false);
     } catch (err: any) {
-      setError("Failed to create task inside ProWorkflow.");
+      setError(err?.message || "Failed to create task inside ProWorkflow.");
       console.error(err);
     } finally {
       setSubmitLoading(false);
@@ -458,8 +586,22 @@ export const NewTask: React.FC = () => {
     );
   }
 
+  const busy = submitLoading || attachmentsUploading;
+
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        pt: 1,
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? "translateY(0)" : "translateY(8px)",
+        transition: "opacity 400ms ease-out, transform 400ms ease-out",
+      }}
+    >
       {error && (
         <Alert severity="error" sx={{ borderRadius: "6px", fontSize: "12px", fontFamily: '"Arial", sans-serif' }}>
           {error}
@@ -473,53 +615,43 @@ export const NewTask: React.FC = () => {
       )}
 
       <Box>
-        <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Title</Typography>
+        <Typography sx={labelSx}>Title</Typography>
         <TextField
           fullWidth
           size="small"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          disabled={submitLoading}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              borderRadius: "6px",
-              fontFamily: '"Arial", sans-serif',
-              fontSize: "13px",
-            },
-          }}
+          disabled={busy}
+          sx={fieldSx}
         />
       </Box>
 
       <Box>
-        <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Description</Typography>
+        <Typography sx={labelSx}>Description</Typography>
         <TextField
           fullWidth
           multiline
           rows={5}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          disabled={submitLoading}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              borderRadius: "6px",
-              fontFamily: '"Arial", sans-serif',
-              fontSize: "13px",
-            },
-          }}
+          disabled={busy}
+          sx={fieldSx}
         />
       </Box>
 
       <Box>
-        <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Project</Typography>
+        <Typography sx={labelSx}>Project</Typography>
         <FormControl size="small" fullWidth>
           <Select
             value={selectedProject}
-            onChange={(e) => handleProjectChange(e.target.value)}
-            disabled={submitLoading}
+            onChange={(e) => handleProjectChange(e.target.value as string)}
+            disabled={busy}
             displayEmpty
             sx={{ height: 42, borderRadius: "6px", fontSize: "13px", fontFamily: '"Arial", sans-serif' }}
           >
-            <MenuItem value="" disabled>Select Project</MenuItem>
+            <MenuItem value="" disabled>
+              Select Project
+            </MenuItem>
             {projectsList.map((p) => (
               <MenuItem key={p.id} value={p.id} sx={{ fontSize: "13px" }}>
                 {p.name}
@@ -530,42 +662,48 @@ export const NewTask: React.FC = () => {
       </Box>
 
       <Box>
-        <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Task list</Typography>
+        <Typography sx={labelSx}>Task list</Typography>
         <FormControl fullWidth size="small">
           <Select
             value={selectedTaskGroup}
-            onChange={(e) => setSelectedTaskGroup(e.target.value)}
-            disabled={!selectedProject || taskGroupsLoading || submitLoading}
+            onChange={(e) => setSelectedTaskGroup(e.target.value as string)}
+            disabled={!selectedProject || taskGroupsLoading || busy}
             displayEmpty
             sx={{ height: 42, borderRadius: "6px", fontSize: "13px", fontFamily: '"Arial", sans-serif' }}
           >
             {taskGroupsLoading ? (
-              <MenuItem value="" disabled>Loading task lists...</MenuItem>
+              <MenuItem value="" disabled>
+                Loading task lists...
+              </MenuItem>
             ) : (
-              <>
-                <MenuItem value="" disabled>Select a task list...</MenuItem>
-                {taskGroupsList.map((tg) => (
+              [
+                <MenuItem key="placeholder" value="" disabled>
+                  Select a task list...
+                </MenuItem>,
+                ...taskGroupsList.map((tg) => (
                   <MenuItem key={tg.id} value={tg.id} sx={{ fontSize: "13px" }}>
                     {tg.name}
                   </MenuItem>
-                ))}
-              </>
+                )),
+              ]
             )}
           </Select>
         </FormControl>
       </Box>
 
       <Box>
-        <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Assignee</Typography>
+        <Typography sx={labelSx}>Assignee</Typography>
         <FormControl fullWidth size="small">
           <Select
             value={selectedAssignee}
-            onChange={(e) => setSelectedAssignee(e.target.value)}
-            disabled={submitLoading}
+            onChange={(e) => setSelectedAssignee(e.target.value as string)}
+            disabled={busy}
             displayEmpty
             sx={{ height: 42, borderRadius: "6px", fontSize: "13px", fontFamily: '"Arial", sans-serif' }}
           >
-            <MenuItem value="" disabled>Select an assignee...</MenuItem>
+            <MenuItem value="" disabled>
+              Select an assignee...
+            </MenuItem>
             {staffList.map((st) => (
               <MenuItem key={st.id} value={st.id} sx={{ fontSize: "13px" }}>
                 {st.firstname} {st.lastname}
@@ -576,68 +714,78 @@ export const NewTask: React.FC = () => {
       </Box>
 
       <Box>
-        <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Due date</Typography>
+        <Typography sx={labelSx}>Priority</Typography>
+        <FormControl fullWidth size="small">
+          <Select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as number)}
+            disabled={busy}
+            sx={{ height: 42, borderRadius: "6px", fontSize: "13px", fontFamily: '"Arial", sans-serif' }}
+          >
+            {PRIORITY_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: "13px" }}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      <Box>
+        <Typography sx={labelSx}>Due date</Typography>
         <TextField
           type="date"
           fullWidth
           size="small"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
-          disabled={submitLoading}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              borderRadius: "6px",
-              fontFamily: '"Arial", sans-serif',
-              fontSize: "13px",
-            },
-          }}
+          disabled={busy}
+          sx={fieldSx}
         />
       </Box>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 0.5 }}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={urgent}
-              onChange={(e) => setUrgent(e.target.checked)}
-              disabled={submitLoading}
-              sx={{ color: "#2563EB", "&.Mui-checked": { color: "#2563EB" }, p: 0.5 }}
-            />
+        <Tooltip
+          title={
+            officeAvailable
+              ? emailAttachments.length === 0
+                ? "This email has no attachments to include."
+                : ""
+              : "Open this from an email in Outlook to include attachments."
           }
-          label="Mark as Urgent"
-          sx={{
-            "& .MuiFormControlLabel-label": {
-              fontFamily: '"Arial", sans-serif',
-              fontSize: "13px",
-              color: "#334155",
-            },
-          }}
-        />
-
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={attachments}
-              onChange={(e) => setAttachments(e.target.checked)}
-              disabled={submitLoading}
-              sx={{ color: "#2563EB", "&.Mui-checked": { color: "#2563EB" }, p: 0.5 }}
+          placement="right"
+        >
+          <span>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={includeAttachments}
+                  onChange={(e) => setIncludeAttachments(e.target.checked)}
+                  disabled={busy || !officeAvailable || emailAttachments.length === 0}
+                  sx={{ color: "#2563EB", "&.Mui-checked": { color: "#2563EB" }, p: 0.5 }}
+                />
+              }
+              label={
+                emailAttachments.length > 0
+                  ? `Include email attachments (${emailAttachments.length})`
+                  : "Include email attachments"
+              }
+              sx={{
+                "& .MuiFormControlLabel-label": {
+                  fontFamily: '"Arial", sans-serif',
+                  fontSize: "13px",
+                  color: "#334155",
+                },
+              }}
             />
-          }
-          label="Add attachments"
-          sx={{
-            "& .MuiFormControlLabel-label": {
-              fontFamily: '"Arial", sans-serif',
-              fontSize: "13px",
-              color: "#334155",
-            },
-          }}
-        />
+          </span>
+        </Tooltip>
       </Box>
 
       <Button
         type="submit"
         variant="contained"
-        disabled={submitLoading}
+        disabled={busy}
         fullWidth
         sx={{
           bgcolor: "#3B82F6",
@@ -649,13 +797,26 @@ export const NewTask: React.FC = () => {
           borderRadius: "6px",
           boxShadow: "none",
           mt: 1.5,
+          transition: "background-color 200ms ease-out, transform 150ms ease-out",
           "&:hover": {
             bgcolor: "#2563EB",
             boxShadow: "none",
           },
+          "&:active": {
+            transform: "scale(0.98)",
+          },
         }}
       >
-        {submitLoading ? <CircularProgress size={20} color="inherit" /> : "Create task"}
+        {attachmentsUploading ? (
+          <>
+            <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+            Uploading attachments...
+          </>
+        ) : submitLoading ? (
+          <CircularProgress size={20} color="inherit" />
+        ) : (
+          "Create task"
+        )}
       </Button>
     </Box>
   );
