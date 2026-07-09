@@ -5,7 +5,7 @@ export const EditTask: React.FC = () => {
   const [project, setProject] = useState("");
   const [taskList, setTaskList] = useState("");
   const [task, setTask] = useState("");
-//  wokring some 
+//  wokring  
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}>
       <Box>
