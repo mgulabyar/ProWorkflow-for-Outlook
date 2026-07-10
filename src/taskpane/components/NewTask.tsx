@@ -177,18 +177,7 @@
 //             disabled={!selectedProject || taskGroupsLoading}
 //             displayEmpty
 //             sx={{ height: 42, borderRadius: "6px", fontSize: "13px", fontFamily: '"Arial", sans-serif' }}
-//           >
-//             {taskGroupsLoading ? (
-//               <MenuItem value="" disabled>Loading task lists...</MenuItem>
-//             ) : (
-//               <>
-//                 <MenuItem value="" disabled>Select a task list...</MenuItem>
-//                 {taskGroupsList.map((tg) => (
-//                   <MenuItem key={tg.id} value={tg.id} sx={{ fontSize: "13px" }}>
-//                     {tg.name}
-//                   </MenuItem>
-//                 ))}
-//               </>
+
 
 
 declare const Office: any;
