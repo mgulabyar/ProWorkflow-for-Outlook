@@ -76,12 +76,7 @@
 //     const response = await fetch(proxyUrl, {
 //       method: "GET",
 //       headers,
-//     });
-//     return response.ok;
-//   } catch {
-//     return false;
-//   }
-// };
+
 
 
 
