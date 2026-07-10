@@ -274,12 +274,6 @@
 //         variant="contained"
 //         fullWidth
 //         sx={{
-//           bgcolor: "#3B82F6",
-//           color: "#ffffff",
-//           textTransform: "none",
-//           fontWeight: 700,
-//           fontSize: "14px",
-
 
 declare const Office: any;
 import React, { useState, useEffect } from "react";
