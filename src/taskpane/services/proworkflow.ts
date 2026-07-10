@@ -91,9 +91,6 @@
 //   return await makeProWorkflowRequest(`/projects/${projectId}/taskgroups`);
 // };
 
-// export const getStaff = async () => {
-//   return await makeProWorkflowRequest("/contacts/staff");
-// };
 
 export interface ProWorkflowConfig {
   apiKey: string;
