@@ -11,7 +11,7 @@ export interface TaskPayload {
   duedate?: string;
   taskgroupid?: string;
 }
-// storage key for localstorage
+// storage key for
 const STORAGE_KEYS = {
   apiKey: "pw_api_key",
   email: "pw_email",
