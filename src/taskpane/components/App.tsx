@@ -113,7 +113,6 @@ export default function App() {
   useEffect(() => {
     // A saved apiKey/email alone isn't enough to make authenticated calls —
     // the password is intentionally never persisted, so it must also be
-    // present in this session (i.e. the user just completed Setup).
     const config = getStoredConfig();
     setIsConfigured(!!config && hasActiveSessionPassword());
   }, []);
