@@ -259,21 +259,6 @@
 //             />
 //           }
 //           label="Add attachments"
-//           sx={{
-//             "& .MuiFormControlLabel-label": {
-//               fontFamily: '"Arial", sans-serif',
-//               fontSize: "13px",
-//               color: "#334155",
-//             },
-//           }}
-//         />
-//       </Box>
-
-//       <Button
-//         type="submit"
-//         variant="contained"
-//         fullWidth
-//         sx={{
 
 declare const Office: any;
 import React, { useState, useEffect } from "react";
