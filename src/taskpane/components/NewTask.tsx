@@ -279,14 +279,6 @@
 //           textTransform: "none",
 //           fontWeight: 700,
 //           fontSize: "14px",
-//           py: 1.2,
-//           borderRadius: "6px",
-//           boxShadow: "none",
-//           mt: 1.5,
-//           "&:hover": {
-//             bgcolor: "#2563EB",
-//             boxShadow: "none",
-//           },
 
 
 declare const Office: any;
