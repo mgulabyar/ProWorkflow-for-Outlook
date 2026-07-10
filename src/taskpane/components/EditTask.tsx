@@ -27,16 +27,6 @@
 //         </FormControl>
 //       </Box>
 
-//       <Box>
-//         <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Task list</Typography>
-//         <FormControl fullWidth size="small">
-//           <Select
-//             value={taskList}
-//             onChange={(e) => setTaskList(e.target.value)}
-//             displayEmpty
-//             disabled={!project}
-
-
 
 import React, { useEffect, useState } from "react";
 import {
