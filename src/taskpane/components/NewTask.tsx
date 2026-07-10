@@ -295,12 +295,8 @@
 //   );
 // };
 
-// declare const Office: any;
-
-
 declare const Office: any;
-
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -322,8 +318,6 @@ import {
   createTask,
   uploadTaskAttachment,
 } from "../services/proworkflow";
-
-/* global Office */
 
 interface Project {
   id: string;
@@ -370,10 +364,9 @@ const extractArray = (data: any): any[] => {
       if (Array.isArray(data[key])) return data[key];
     }
   }
+  console.warn("[ProWorkflow] Response received but no array found in it. Raw data:", data);
   return [];
 };
-
-// --- Office.js helpers, promise-wrapped so they can be properly awaited ---
 
 const getSubjectAsync = (item: any): Promise<string> =>
   new Promise((resolve) => {
@@ -399,7 +392,6 @@ const getBodyAsync = (item: any): Promise<string> =>
 
 const getEmailAttachments = (item: any): EmailAttachment[] => {
   if (!item || !Array.isArray(item.attachments)) return [];
-  // Inline attachments (e.g. embedded images) aren't useful as task files
   return item.attachments.filter((a: any) => !a.isInline);
 };
 
@@ -434,7 +426,7 @@ export const NewTask: React.FC = () => {
   const [selectedTaskGroup, setSelectedTaskGroup] = useState("");
   const [selectedAssignee, setSelectedAssignee] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [priority, setPriority] = useState<number>(2); // defaults to "Normal"
+  const [priority, setPriority] = useState<number>(2);
   const [includeAttachments, setIncludeAttachments] = useState(false);
 
   const [uiLoading, setUiLoading] = useState(true);
@@ -466,8 +458,19 @@ export const NewTask: React.FC = () => {
         }
 
         const [projectsData, staffData] = await Promise.all([getProjects(), getStaff()]);
-        setProjectsList(extractArray(projectsData));
-        setStaffList(extractArray(staffData));
+        
+        const extractedProjects = extractArray(projectsData);
+        const extractedStaff = extractArray(staffData);
+
+        console.log("%c[ProWorkflow UI Builder] Extracted Projects Array:", "color: #10B981; font-weight: bold;", extractedProjects);
+        console.log("%c[ProWorkflow UI Builder] Extracted Staff Array:", "color: #10B981; font-weight: bold;", extractedStaff);
+
+        if (extractedProjects.length === 0) {
+          console.warn("%c[ProWorkflow Diagnostic] Projects list returned 0 items. Make sure your newly created project's status/workstage is set to 'In Progress' on the ProWorkflow site!", "color: #F59E0B; font-weight: bold;");
+        }
+
+        setProjectsList(extractedProjects);
+        setStaffList(extractedStaff);
       } catch (err: any) {
         setError(err?.message || "Failed to fetch startup data from ProWorkflow.");
         console.error(err);
@@ -477,8 +480,7 @@ export const NewTask: React.FC = () => {
     };
 
     init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [officeAvailable]);
 
   const handleProjectChange = async (projectId: string) => {
     setSelectedProject(projectId);
@@ -490,7 +492,11 @@ export const NewTask: React.FC = () => {
     try {
       setTaskGroupsLoading(true);
       const taskGroupsData = await getTaskGroups(projectId);
-      setTaskGroupsList(extractArray(taskGroupsData));
+      const extractedGroups = extractArray(taskGroupsData);
+      
+      console.log(`%c[ProWorkflow UI Builder] Extracted Task Groups for Project ${projectId}:`, "color: #10B981; font-weight: bold;", extractedGroups);
+      
+      setTaskGroupsList(extractedGroups);
     } catch (err: any) {
       console.error("Failed to load task groups for selected project", err);
       setError(err?.message || "Failed to load task lists for the selected project.");

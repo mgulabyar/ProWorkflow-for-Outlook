@@ -127,6 +127,7 @@ const extractArray = (data: any): any[] => {
       if (Array.isArray(data[key])) return data[key];
     }
   }
+  console.warn("[ProWorkflow] Response received but no array found in it. Raw data:", data);
   return [];
 };
 
@@ -511,4 +512,3 @@ export const EditTask: React.FC = () => {
     </Box>
   );
 };
-

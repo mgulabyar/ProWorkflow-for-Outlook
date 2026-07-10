@@ -95,38 +95,15 @@
 //   return await makeProWorkflowRequest("/contacts/staff");
 // };
 
-
-/**
- * ProWorkflow API integration.
- *
- * IMPORTANT SECURITY NOTE:
- * This module expects API_BASE_URL to point at YOUR OWN backend/proxy
- * (e.g. a small Node.js server or Azure Function) that:
- *   - forwards requests to https://api.proworkflow.net
- *   - can hold long-lived credentials server-side if needed
- *   - is infrastructure you control and can audit
- *
- * Do NOT point this at a public third-party CORS proxy (e.g. corsproxy.io)
- * in a client project. Doing so sends API keys, credentials, and — in this
- * add-in's case — email content and attachments through infrastructure you
- * do not control and cannot audit.
- *
- * Until the backend proxy exists, set VITE_PROWORKFLOW_PROXY_URL to a local
- * dev server (e.g. http://localhost:3001/api/proworkflow) that you run yourself.
- */
-
 export interface ProWorkflowConfig {
   apiKey: string;
   email: string;
 }
 
-/** Shape of the payload sent when creating a task, matching the required workflow:
- * name, project, assignee, description, priority, and (handled separately) attachments.
- */
 export interface TaskPayload {
   name: string;
   description?: string;
-  contactid?: string; // assignee id
+  contactid?: string;
   priorityid?: number;
   duedate?: string;
   taskgroupid?: string;
@@ -135,15 +112,18 @@ export interface TaskPayload {
 const STORAGE_KEYS = {
   apiKey: "pw_api_key",
   email: "pw_email",
+  password: "pw_password",
 } as const;
 
-// Password is intentionally kept in memory only for the current session.
-// It is never written to localStorage, so it cannot leak via storage
-// inspection or persist across sessions/devices.
-let sessionPassword: string | null = null;
+const CUSTOM_PROXY_BASE_URL = (import.meta as any).env?.VITE_PROWORKFLOW_PROXY_URL as string | undefined;
 
-const API_BASE_URL =
-  (import.meta as any).env?.VITE_PROWORKFLOW_PROXY_URL || "http://localhost:3001/api/proworkflow";
+const buildRequestUrl = (endpoint: string): string => {
+  if (CUSTOM_PROXY_BASE_URL) {
+    return `${CUSTOM_PROXY_BASE_URL}${endpoint}`;
+  }
+  const targetUrl = `https://api.proworkflow.net${endpoint}`;
+  return `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+};
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
@@ -169,10 +149,6 @@ export const getStoredConfig = (): ProWorkflowConfig | null => {
   return null;
 };
 
-/**
- * Persists the non-sensitive parts of the config (apiKey, email).
- * The password, if provided, is kept only in memory for this session.
- */
 export const saveConfig = (config: ProWorkflowConfig, password?: string): void => {
   const apiKey = config.apiKey?.trim();
   const email = config.email?.trim();
@@ -188,17 +164,19 @@ export const saveConfig = (config: ProWorkflowConfig, password?: string): void =
   localStorage.setItem(STORAGE_KEYS.email, email);
 
   if (password) {
-    sessionPassword = password;
+    localStorage.setItem(STORAGE_KEYS.password, password);
   }
 };
 
 export const clearConfig = (): void => {
   localStorage.removeItem(STORAGE_KEYS.apiKey);
   localStorage.removeItem(STORAGE_KEYS.email);
-  sessionPassword = null;
+  localStorage.removeItem(STORAGE_KEYS.password);
 };
 
-export const hasActiveSessionPassword = (): boolean => sessionPassword !== null;
+export const hasActiveSessionPassword = (): boolean => {
+  return localStorage.getItem(STORAGE_KEYS.password) !== null;
+};
 
 const buildAuthHeaders = (config: ProWorkflowConfig): Record<string, string> => {
   const headers: Record<string, string> = {
@@ -206,8 +184,9 @@ const buildAuthHeaders = (config: ProWorkflowConfig): Record<string, string> => 
     apikey: config.apiKey,
   };
 
-  if (sessionPassword) {
-    const credentials = btoa(`${config.email}:${sessionPassword}`);
+  const storedPassword = localStorage.getItem(STORAGE_KEYS.password);
+  if (storedPassword) {
+    const credentials = btoa(`${config.email}:${storedPassword}`);
     headers["Authorization"] = `Basic ${credentials}`;
   }
 
@@ -225,48 +204,85 @@ export const makeProWorkflowRequest = async <T = unknown>(
   }
 
   const headers = buildAuthHeaders(config);
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = buildRequestUrl(endpoint);
 
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (networkErr) {
+    console.error("[ProWorkflow] Network request failed before reaching any server:", {
+      url,
+      endpoint,
+      method,
+      error: networkErr,
+    });
+    throw new ProWorkflowApiError(
+      `[NETWORK] Could not reach the server at all (endpoint: ${endpoint}). This points to a connectivity/proxy issue, not a ProWorkflow data issue. Check your internet connection and the browser Network tab.`,
+      0,
+      null
+    );
+  }
 
   let responseBody: unknown = null;
+  let parseFailed = false;
   try {
     responseBody = await response.json();
   } catch {
-    // No JSON body (e.g. empty 204 response) — safe to ignore.
+    parseFailed = true;
   }
+
+  console.groupCollapsed(`[ProWorkflow] ${method} ${endpoint} -> ${response.status}`);
+  console.log("URL:", url);
+  console.log("Status:", response.status, response.statusText);
+  console.log("Parsed as JSON:", !parseFailed);
+  console.log("Body:", responseBody);
+  console.groupEnd();
 
   if (!response.ok) {
     throw new ProWorkflowApiError(
-      `ProWorkflow API error (${response.status}): ${response.statusText}`,
+      `[HTTP ${response.status}] ${response.statusText || "Request failed"} (endpoint: ${endpoint}). ${
+        response.status === 401 || response.status === 403
+          ? "This looks like an authentication/permission problem."
+          : response.status === 404
+          ? "This looks like a wrong or unsupported endpoint path."
+          : "Check the response body in the console for details."
+      }`,
       response.status,
       responseBody
+    );
+  }
+
+  if (parseFailed && response.status !== 204) {
+    throw new ProWorkflowApiError(
+      `[NON-JSON RESPONSE] Got HTTP ${response.status} but the body wasn't valid JSON (endpoint: ${endpoint}). This usually means a proxy returned an error/rate-limit page instead of forwarding to ProWorkflow. Check the Network tab.`,
+      response.status,
+      null
     );
   }
 
   return responseBody as T;
 };
 
-/**
- * Tests a connection using credentials supplied directly (e.g. from a login form),
- * without requiring them to be saved first.
- */
 export const testConnection = async (config: ProWorkflowConfig, password?: string): Promise<boolean> => {
   const headers: Record<string, string> = {
     apikey: config.apiKey,
   };
 
-  if (password) {
-    const credentials = btoa(`${config.email}:${password}`);
+  const storedPassword = password || localStorage.getItem(STORAGE_KEYS.password);
+  if (storedPassword) {
+    const credentials = btoa(`${config.email}:${storedPassword}`);
     headers["Authorization"] = `Basic ${credentials}`;
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/contacts`, {
+    const targetUrl = "https://api.proworkflow.net/contacts";
+    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+
+    const response = await fetch(proxyUrl, {
       method: "GET",
       headers,
     });
@@ -276,7 +292,8 @@ export const testConnection = async (config: ProWorkflowConfig, password?: strin
   }
 };
 
-export const getProjects = () => makeProWorkflowRequest("/projects?status=active");
+/* --- FIXED: Added &contactid=all to fetch all active projects --- */
+export const getProjects = () => makeProWorkflowRequest("/projects?status=active&contactid=all");
 
 export const getTaskGroups = (projectId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/taskgroups`);
@@ -286,41 +303,20 @@ export const getStaff = () => makeProWorkflowRequest("/contacts/staff");
 export const createTask = <T = { id: string }>(projectId: string, taskData: TaskPayload) =>
   makeProWorkflowRequest<T>(`/projects/${projectId}/tasks`, "POST", taskData);
 
-/**
- * Lists tasks within a task list (task group).
- * NOTE: confirm this endpoint shape against the ProWorkflow API docs.
- */
 export const getTasksForTaskGroup = (projectId: string, taskGroupId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/taskgroups/${taskGroupId}/tasks`);
 
-/**
- * Fetches full details for a single task, used to pre-fill the Edit Task form.
- * NOTE: confirm this endpoint shape against the ProWorkflow API docs.
- */
 export const getTaskDetails = (projectId: string, taskId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/tasks/${taskId}`);
 
-/**
- * Updates an existing task.
- * NOTE: confirm the HTTP method (PUT vs PATCH) and endpoint shape against the
- * ProWorkflow API docs.
- */
 export const updateTask = (projectId: string, taskId: string, taskData: Partial<TaskPayload>) =>
   makeProWorkflowRequest(`/projects/${projectId}/tasks/${taskId}`, "PUT", taskData);
 
-/** Payload for attaching a file to an already-created task. */
 export interface TaskAttachmentPayload {
   name: string;
   contentType: string;
-  /** Base64-encoded file content */
   contentBytes: string;
 }
 
-/**
- * Uploads a single file to an existing task.
- * NOTE: confirm the exact endpoint path and field names against the
- * ProWorkflow API docs (https://api.proworkflow.net/?documentation) —
- * this assumes a conventional /tasks/{id}/files endpoint.
- */
 export const uploadTaskAttachment = (taskId: string, attachment: TaskAttachmentPayload) =>
   makeProWorkflowRequest(`/tasks/${taskId}/files`, "POST", attachment);

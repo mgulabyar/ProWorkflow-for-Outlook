@@ -163,8 +163,6 @@ export const Setup: React.FC<SetupProps> = ({ onSetupSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pre-fill apiKey/email if previously saved. Password is never persisted,
-  // so it always needs to be entered again for a new session.
   useEffect(() => {
     const existing = getStoredConfig();
     if (existing) {
