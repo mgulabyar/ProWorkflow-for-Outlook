@@ -69,10 +69,6 @@
 //     headers["Authorization"] = `Basic ${credentials}`;
 //   }
 
-//   try {
-//     const targetUrl = "https://api.proworkflow.net/contacts";
-//     const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
-
 
 
 
