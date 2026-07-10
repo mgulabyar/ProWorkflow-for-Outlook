@@ -250,16 +250,6 @@
 //           }}
 //         />
 
-//         <FormControlLabel
-//           control={
-//             <Checkbox
-//               checked={attachments}
-//               onChange={(e) => setAttachments(e.target.checked)}
-//               sx={{ color: "#2563EB", "&.Mui-checked": { color: "#2563EB" }, p: 0.5 }}
-//             />
-//           }
-//           label="Add attachments"
-
 declare const Office: any;
 import React, { useState, useEffect } from "react";
 import {
