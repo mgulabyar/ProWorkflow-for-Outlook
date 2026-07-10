@@ -1,29 +1,3 @@
-// import React, { useState } from "react";
-// import { Box, FormControl, Select, MenuItem, Typography } from "@mui/material";
-
-// export const EditTask: React.FC = () => {
-//   const [project, setProject] = useState("");
-//   const [taskList, setTaskList] = useState("");
-//   const [task, setTask] = useState("");
-
-//   return (
-//     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}>
-//       <Box>
-//         <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Project</Typography>
-//         <FormControl fullWidth size="small">
-//           <Select
-//             value={project}
-//             onChange={(e) => setProject(e.target.value)}
-//             displayEmpty
-//             sx={{
-//               borderRadius: "6px",
-//               fontFamily: '"Arial", sans-serif',
-//               fontSize: "13px",
-//             }}
-//           >
-
-
-
 import React, { useEffect, useState } from "react";
 import {
   Box,
