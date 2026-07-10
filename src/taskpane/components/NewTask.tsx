@@ -198,28 +198,6 @@
 //         <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Assignee</Typography>
 //         <FormControl fullWidth size="small">
 //           <Select
-//             value={selectedAssignee}
-//             onChange={(e) => setSelectedAssignee(e.target.value)}
-//             displayEmpty
-//             sx={{ height: 42, borderRadius: "6px", fontSize: "13px", fontFamily: '"Arial", sans-serif' }}
-//           >
-//             <MenuItem value="" disabled>Select an assignee...</MenuItem>
-//             {staffList.map((st) => (
-//               <MenuItem key={st.id} value={st.id} sx={{ fontSize: "13px" }}>
-//                 {st.firstname} {st.lastname}
-//               </MenuItem>
-//             ))}
-//           </Select>
-//         </FormControl>
-//       </Box>
-
-//       <Box>
-//         <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", mb: 0.5 }}>Due date</Typography>
-//         <TextField
-//           type="date"
-//           fullWidth
-//           size="small"
-//           value={dueDate}
 
 
 declare const Office: any;
