@@ -64,15 +64,6 @@
 //     "apikey": config.apiKey,
 //   };
 
-//   if (config.password) {
-//     const credentials = btoa(`${config.email}:${config.password}`);
-//     headers["Authorization"] = `Basic ${credentials}`;
-//   }
-
-
-
-
-
 
 
 export interface ProWorkflowConfig {
