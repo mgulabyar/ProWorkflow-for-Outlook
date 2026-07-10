@@ -73,9 +73,6 @@
 //     const targetUrl = "https://api.proworkflow.net/contacts";
 //     const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
 
-//     const response = await fetch(proxyUrl, {
-//       method: "GET",
-//       headers,
 
 
 
