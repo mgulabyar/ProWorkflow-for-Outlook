@@ -21,11 +21,7 @@
 //               fontSize: "13px",
 //             }}
 //           >
-//             <MenuItem value="" disabled>Select a project...</MenuItem>
-//             <MenuItem value="1">Discover ProWorkflow</MenuItem>
-//           </Select>
-//         </FormControl>
-//       </Box>
+
 
 
 import React, { useEffect, useState } from "react";
