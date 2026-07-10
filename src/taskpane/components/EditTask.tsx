@@ -62,13 +62,7 @@
 //             }}
 //           >
 //             <MenuItem value="" disabled>Select a task...</MenuItem>
-//             <MenuItem value="1">Configure Outlook Connection</MenuItem>
-//           </Select>
-//         </FormControl>
-//       </Box>
-//     </Box>
-//   );
-// };
+
 
 
 import React, { useEffect, useState } from "react";
