@@ -220,24 +220,6 @@
 //           fullWidth
 //           size="small"
 //           value={dueDate}
-//           onChange={(e) => setDueDate(e.target.value)}
-//           sx={{
-//             "& .MuiOutlinedInput-root": {
-//               borderRadius: "6px",
-//               fontFamily: '"Arial", sans-serif',
-//               fontSize: "13px",
-//             },
-//           }}
-//         />
-//       </Box>
-
-//       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 0.5 }}>
-//         <FormControlLabel
-//           control={
-//             <Checkbox
-//               checked={urgent}
-//               onChange={(e) => setUrgent(e.target.checked)}
-//               sx={{ color: "#2563EB", "&.Mui-checked": { color: "#2563EB" }, p: 0.5 }}
 
 
 declare const Office: any;
