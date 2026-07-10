@@ -87,9 +87,7 @@
 //   return await makeProWorkflowRequest("/projects?status=active");
 // };
 
-// export const getTaskGroups = async (projectId: string) => {
-//   return await makeProWorkflowRequest(`/projects/${projectId}/taskgroups`);
-// };
+
 
 
 export interface ProWorkflowConfig {
