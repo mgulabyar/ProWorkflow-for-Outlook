@@ -378,10 +378,6 @@ export const makeProWorkflowRequest = async <T = unknown>(
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (networkErr) {
-    // fetch() itself threw — the request never got a response at all.
-    // This means: offline, DNS failure, CORS block, or the proxy/server is unreachable.
-    // This is NOT a "your ProWorkflow account has no data" situation — it's an
-    // infrastructure/connectivity problem before ProWorkflow was ever reached.
     console.error("[ProWorkflow] Network request failed before reaching any server:", {
       url,
       endpoint,
