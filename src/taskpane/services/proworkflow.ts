@@ -496,11 +496,7 @@ export const getTasksForTaskGroup = (projectId: string, taskGroupId: string) =>
 export const getTaskDetails = (projectId: string, taskId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/tasks/${taskId}`);
 
-/**
- * Updates an existing task.
- * NOTE: confirm the HTTP method (PUT vs PATCH) and endpoint shape against the
- * ProWorkflow API docs.
- */
+
 export const updateTask = (projectId: string, taskId: string, taskData: Partial<TaskPayload>) =>
   makeProWorkflowRequest(`/projects/${projectId}/tasks/${taskId}`, "PUT", taskData);
 
