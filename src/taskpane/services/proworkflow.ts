@@ -469,7 +469,6 @@ export const testConnection = async (config: ProWorkflowConfig, password?: strin
 
 export const getProjects = () => makeProWorkflowRequest("/projects?status=active");
 
-// TEMPORARY DIAGNOSTIC — remove once the empty-projects issue is confirmed/resolved.
 export const getAllProjectsDebug = () => makeProWorkflowRequest("/projects");
 
 export const getTaskGroups = (projectId: string) =>
