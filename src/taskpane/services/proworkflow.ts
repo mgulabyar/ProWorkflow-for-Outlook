@@ -490,7 +490,6 @@ export const getTasksForTaskGroup = (projectId: string, taskGroupId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/taskgroups/${taskGroupId}/tasks`);
 
 /**
- * Fetches full details for a single task, used to pre-fill the Edit Task form.
  */
 export const getTaskDetails = (projectId: string, taskId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/tasks/${taskId}`);
