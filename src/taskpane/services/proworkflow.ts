@@ -471,7 +471,6 @@ export const getProjects = () => makeProWorkflowRequest("/projects?status=active
 
 // TEMPORARY DIAGNOSTIC — remove once the empty-projects issue is confirmed/resolved.
 // Fetches ALL projects regardless of status, to check whether the account has
-// any projects at all, or specifically none with status=active.
 export const getAllProjectsDebug = () => makeProWorkflowRequest("/projects");
 
 export const getTaskGroups = (projectId: string) =>
