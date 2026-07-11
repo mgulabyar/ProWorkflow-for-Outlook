@@ -512,12 +512,7 @@ export interface TaskAttachmentPayload {
   contentBytes: string;
 }
 
-/**
- * Uploads a single file to an existing task.
- * NOTE: confirm the exact endpoint path and field names against the
- * ProWorkflow API docs (https://api.proworkflow.net/?documentation) —
- * this assumes a conventional /tasks/{id}/files endpoint.
- */
+
 export const uploadTaskAttachment = (taskId: string, attachment: TaskAttachmentPayload) =>
   makeProWorkflowRequest(`/tasks/${taskId}/files`, "POST", attachment);
 
