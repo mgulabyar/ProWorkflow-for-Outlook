@@ -482,15 +482,10 @@ export const getStaff = () => makeProWorkflowRequest("/contacts/staff");
 export const createTask = <T = { id: string }>(projectId: string, taskData: TaskPayload) =>
   makeProWorkflowRequest<T>(`/projects/${projectId}/tasks`, "POST", taskData);
 
-/**
- * Lists tasks within a task list (task group).
- * NOTE: confirm this endpoint shape against the ProWorkflow API docs.
- */
+
 export const getTasksForTaskGroup = (projectId: string, taskGroupId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/taskgroups/${taskGroupId}/tasks`);
 
-/**
- */
 export const getTaskDetails = (projectId: string, taskId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/tasks/${taskId}`);
 
