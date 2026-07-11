@@ -604,7 +604,6 @@ const extractArray = (data: any): any[] => {
       if (Array.isArray(data[key])) return data[key];
     }
   }
-  // not a connectivity problem — the raw data is logged so it's easy to see
   // what ProWorkflow actually sent back.
   console.warn("[ProWorkflow] Response received but no array found in it. Raw data:", data);
   return [];
