@@ -504,7 +504,6 @@ export const getTaskDetails = (projectId: string, taskId: string) =>
 export const updateTask = (projectId: string, taskId: string, taskData: Partial<TaskPayload>) =>
   makeProWorkflowRequest(`/projects/${projectId}/tasks/${taskId}`, "PUT", taskData);
 
-/** Payload for attaching a file to an already-created task. */
 export interface TaskAttachmentPayload {
   name: string;
   contentType: string;
