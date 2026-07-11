@@ -442,10 +442,6 @@ export const makeProWorkflowRequest = async <T = unknown>(
   return responseBody as T;
 };
 
-/**
- * Tests a connection using credentials supplied directly (e.g. from a login form),
- * without requiring them to be saved first.
- */
 export const testConnection = async (config: ProWorkflowConfig, password?: string): Promise<boolean> => {
   const headers: Record<string, string> = {
     apikey: config.apiKey,
