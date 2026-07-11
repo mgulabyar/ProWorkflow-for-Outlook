@@ -633,7 +633,6 @@ const getBodyAsync = (item: any): Promise<string> =>
 
 const getEmailAttachments = (item: any): EmailAttachment[] => {
   if (!item || !Array.isArray(item.attachments)) return [];
-  // Inline attachments (e.g. embedded images) aren't useful as task files
   return item.attachments.filter((a: any) => !a.isInline);
 };
 
