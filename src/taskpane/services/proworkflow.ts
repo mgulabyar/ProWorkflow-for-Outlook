@@ -234,7 +234,6 @@
  * By default, requests are routed through a public CORS proxy (corsproxy.io)
  * so the add-in works out of the box during development. This is TEMPORARY —
  * it sends API keys, credentials, and (for this add-in) email content and
- * attachments through infrastructure you don't control.
  *
  * Before shipping to real users, build your own backend/proxy (e.g. a small
  * Node.js server or Azure Function) that forwards requests to
