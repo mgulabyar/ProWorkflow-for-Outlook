@@ -667,7 +667,7 @@ export const NewTask: React.FC = () => {
   const [selectedTaskGroup, setSelectedTaskGroup] = useState("");
   const [selectedAssignee, setSelectedAssignee] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [priority, setPriority] = useState<number>(2); // defaults to "Normal"
+  const [priority, setPriority] = useState<number>(2);
   const [includeAttachments, setIncludeAttachments] = useState(false);
 
   const [uiLoading, setUiLoading] = useState(true);
@@ -711,7 +711,6 @@ export const NewTask: React.FC = () => {
           throw projectsErr;
         }
 
-        // TEMPORARY DIAGNOSTIC — comparing filtered (active only) vs unfiltered results.
         try {
           const allProjectsDebug = await getAllProjectsDebug();
           console.log(
