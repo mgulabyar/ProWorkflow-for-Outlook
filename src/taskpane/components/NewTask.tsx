@@ -604,7 +604,6 @@ const extractArray = (data: any): any[] => {
       if (Array.isArray(data[key])) return data[key];
     }
   }
-  // Reached here means: a response DID come back (not a network/HTTP error —
   // those throw earlier in proworkflow.ts) but it contained no array anywhere.
   // This points to a code-side assumption issue (wrong field name / shape),
   // not a connectivity problem — the raw data is logged so it's easy to see
