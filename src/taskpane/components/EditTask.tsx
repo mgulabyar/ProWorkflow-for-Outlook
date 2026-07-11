@@ -66,7 +66,7 @@ const fieldSx = {
     fontSize: "13px",
   },
 };
-const selectSx = { borderRadius: "6px", fontFamily: '"Arial", sans-serif', fontSize: "13px" };
+const selectSx = { borderRadius: "7px", fontFamily: '"Arial", sans-serif', fontSize: "13px" };
 
 export const EditTask: React.FC = () => {
   const [mounted, setMounted] = useState(false);
