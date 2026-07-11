@@ -558,7 +558,6 @@ import {
   uploadTaskAttachment,
 } from "../services/proworkflow";
 
-/* global Office */
 
 interface Project {
   id: string;
