@@ -508,7 +508,6 @@ export const updateTask = (projectId: string, taskId: string, taskData: Partial<
 export interface TaskAttachmentPayload {
   name: string;
   contentType: string;
-  /** Base64-encoded file content */
   contentBytes: string;
 }
 
