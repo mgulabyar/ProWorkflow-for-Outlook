@@ -411,10 +411,6 @@ export const makeProWorkflowRequest = async <T = unknown>(
   console.groupEnd();
 
   if (!response.ok) {
-    // The request reached a server and got a real HTTP error back.
-    // 401/403 -> auth/credentials issue. 404 -> wrong endpoint path.
-    // Anything else -> server-side error. All of these are useful signals
-    // distinct from "request never arrived".
     throw new ProWorkflowApiError(
       `[HTTP ${response.status}] ${response.statusText || "Request failed"} (endpoint: ${endpoint}). ${
         response.status === 401 || response.status === 403
