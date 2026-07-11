@@ -491,7 +491,6 @@ export const getTasksForTaskGroup = (projectId: string, taskGroupId: string) =>
 
 /**
  * Fetches full details for a single task, used to pre-fill the Edit Task form.
- * NOTE: confirm this endpoint shape against the ProWorkflow API docs.
  */
 export const getTaskDetails = (projectId: string, taskId: string) =>
   makeProWorkflowRequest(`/projects/${projectId}/tasks/${taskId}`);
