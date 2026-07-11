@@ -604,12 +604,10 @@ const extractArray = (data: any): any[] => {
       if (Array.isArray(data[key])) return data[key];
     }
   }
-  // what ProWorkflow actually sent back.
   console.warn("[ProWorkflow] Response received but no array found in it. Raw data:", data);
   return [];
 };
 
-// --- Office.js helpers, promise-wrapped so they can be properly awaited ---
 
 const getSubjectAsync = (item: any): Promise<string> =>
   new Promise((resolve) => {
