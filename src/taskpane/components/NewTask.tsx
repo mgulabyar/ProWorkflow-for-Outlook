@@ -1087,7 +1087,6 @@ export const NewTask: React.FC = () => {
         ) : (
           "Create task"
         )}
-        {/* Create */}
       </Button>
     </Box>
   );
