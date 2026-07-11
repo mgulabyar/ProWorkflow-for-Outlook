@@ -247,13 +247,11 @@ export interface ProWorkflowConfig {
   email: string;
 }
 
-/** Shape of the payload sent when creating a task, matching the required workflow:
- * name, project, assignee, description, priority, and (handled separately) attachments.
- */
+
 export interface TaskPayload {
   name: string;
   description?: string;
-  contactid?: string; // assignee id
+  contactid?: string; 
   priorityid?: number;
   duedate?: string;
   taskgroupid?: string;
@@ -264,20 +262,9 @@ const STORAGE_KEYS = {
   email: "pw_email",
 } as const;
 
-// Password is intentionally kept in memory only for the current session.
-// It is never written to localStorage, so it cannot leak via storage
-// inspection or persist across sessions/devices.
 let sessionPassword: string | null = null;
 
-// If you've set up your own backend/proxy, point this at it via
-// VITE_PROWORKFLOW_PROXY_URL (e.g. https://yourapp.com/api/proworkflow) and
-// requests will be sent as `${VITE_PROWORKFLOW_PROXY_URL}${endpoint}`.
-//
-// Until that backend exists, requests fall back to a public CORS proxy so
-// the add-in keeps working. This fallback is TEMPORARY — replace it with
-// your own backend before this ships to real users, since it currently
-// routes API keys, credentials, and email content through infrastructure
-// you don't control.
+
 const CUSTOM_PROXY_BASE_URL = (import.meta as any).env?.VITE_PROWORKFLOW_PROXY_URL as string | undefined;
 
 const buildRequestUrl = (endpoint: string): string => {
@@ -312,10 +299,6 @@ export const getStoredConfig = (): ProWorkflowConfig | null => {
   return null;
 };
 
-/**
- * Persists the non-sensitive parts of the config (apiKey, email).
- * The password, if provided, is kept only in memory for this session.
- */
 export const saveConfig = (config: ProWorkflowConfig, password?: string): void => {
   const apiKey = config.apiKey?.trim();
   const email = config.email?.trim();
