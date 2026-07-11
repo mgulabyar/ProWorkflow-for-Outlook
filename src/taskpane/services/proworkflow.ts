@@ -429,9 +429,6 @@ export const makeProWorkflowRequest = async <T = unknown>(
   }
 
   if (parseFailed && response.status !== 204) {
-    // Got a 200 OK, but the body wasn't JSON. Usually means a proxy served
-    // an error/rate-limit HTML page while still returning status 200 —
-    // i.e. the request likely never truly reached ProWorkflow.
     throw new ProWorkflowApiError(
       `[NON-JSON RESPONSE] Got HTTP ${response.status} but the body wasn't valid JSON (endpoint: ${endpoint}). This usually means a proxy returned an error/rate-limit page instead of forwarding to ProWorkflow. Check the Network tab.`,
       response.status,
